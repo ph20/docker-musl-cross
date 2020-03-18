@@ -5,6 +5,6 @@ This repository contains a `Dockerfile` that builds an image with the
 of musl up-to-date.
 
 This image is also an automated build on the Docker hub - you can fetch it
-by running: `docker pull andrewd/musl-cross`
+by running: `docker pull ph20/musl-cross`
 
-[1]: https://github.com/GregorR/musl-cross
+[1]: https://github.com/ph20/musl-cross

@@ -1,5 +1,5 @@
-FROM debian:jessie
-MAINTAINER Andrew Dunham <andrew@du.nham.ca>
+FROM debian:jessie-20200224
+LABEL authors="Andrew Dunham <andrew@du.nham.ca>, Alexander Grynchuk <agrynchuk@gmail.com>"
 
 # Install build tools
 RUN apt-get update && \
@@ -17,15 +17,17 @@ RUN apt-get update && \
         python              \
         texinfo             \
         vim                 \
-        wget
+        wget                \
+        unzip
 
 # Install musl-cross
 RUN mkdir /build &&                                                 \
     cd /build &&                                                    \
-    git clone https://github.com/GregorR/musl-cross.git &&          \
-    cd musl-cross &&                                                \
+    curl -L https://github.com/GregorR/musl-cross/archive/a8a66490dae7f23a2cf5e256f3a596d1ccfe1a03.zip -o musl-cross.zip && \
+    unzip musl-cross.zip && \
+    cd musl-cross-* &&                                                \
     echo 'GCC_BUILTIN_PREREQS=yes' >> config.sh &&                  \
-    sed -i -e "s/^MUSL_VERSION=.*\$/MUSL_VERSION=1.1.12/" defs.sh &&  \
+    #sed -i -e "s/^MUSL_VERSION=.*\$/MUSL_VERSION=1.1.12/" defs.sh &&  \
     ./build.sh &&                                                   \
     cd / &&                                                         \
     apt-get clean &&                                                \
