@@ -1,24 +1,15 @@
 # vim:set ft=dockerfile:
-FROM debian:jessie-20200414 as jessie-latest
+FROM debian:buster-20210621 as buster-latest
 
 # make Apt non-interactive
 ENV DEBIAN_FRONTEND=noninteractive
 
 # prevent debconf: delaying package configuration, since apt-utils is not installed
 #RUN echo 'Dpkg::Options::="--force-confold";' >> /etc/apt/apt.conf.d/90confold
-
-# Debian Jessie is EOL'd and original repos don't work.
-# Switch to the archive mirror until we can get people to
-# switch to Stretch.
-RUN if grep -q Debian /etc/os-release && grep -q jessie /etc/os-release; then \
-	rm /etc/apt/sources.list \
-    && echo "deb http://archive.debian.org/debian/ jessie main" >> /etc/apt/sources.list \
-    && echo "deb http://security.debian.org/debian-security jessie/updates main" >> /etc/apt/sources.list \
-	; fi
-
-RUN apt-get update && \
-    apt-get upgrade  -yy && \
-    apt-get install sudo --no-install-recommends -yy
+RUN apt-get update
+RUN apt-get install apt-utils --no-install-recommends -yy
+RUN apt-get upgrade  -yy
+RUN apt-get install sudo --no-install-recommends -yy
 
 RUN useradd --uid=10000 --user-group --create-home build && \
 	echo 'build ALL=NOPASSWD: ALL' >> /etc/sudoers.d/50-build && \
@@ -26,7 +17,7 @@ RUN useradd --uid=10000 --user-group --create-home build && \
 RUN mkdir /build && chown build:build /build
 
 
-FROM jessie-latest as jessie-devel
+FROM buster-latest as buster-devel
 # Install build tools
 RUN apt-get install --no-install-recommends  -yy \
         automake            \
@@ -54,7 +45,7 @@ RUN locale-gen C.UTF-8 || true
 ENV LANG=C.UTF-8
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-FROM jessie-devel as jessie-devel-prebuild
+FROM buster-devel as buster-devel-prebuild
 RUN mkdir /opt/cross && chown build:build /opt/cross
 USER build
 ADD --chown=build:build https://github.com/GregorR/musl-cross/archive/a8a66490dae7f23a2cf5e256f3a596d1ccfe1a03.zip /build/musl-cross.zip
@@ -69,7 +60,7 @@ ADD --chown=build:build http://ftpmirror.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.bz2 /bu
 ADD --chown=build:build https://ftpmirror.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz /build/musl-cross/tarballs/
 WORKDIR /build
 
-FROM jessie-devel-prebuild as jessie-devel-build
+FROM buster-devel-prebuild as buster-devel-build
 # Install musl-cross
 RUN cd /build &&                                                    \
     cd /build/musl-cross &&                                                \
@@ -77,11 +68,11 @@ RUN cd /build &&                                                    \
     #sed -i -e "s/^MUSL_VERSION=.*\$/MUSL_VERSION=1.1.24-ea952/" defs.sh &&  \
     ./build.sh
 
-FROM jessie-devel
+FROM buster-devel
 LABEL authors="Andrew Dunham <andrew@du.nham.ca>, Alexander Grynchuk <agrynchuk@gmail.com>"
 LABEL maintainer="Alexander Grynchuk <agrynchuk@gmail.com>"
 
-COPY --from=jessie-devel-build /opt/cross/ /opt/cross/
+COPY --from=buster-devel-build /opt/cross/ /opt/cross/
 ARG BUILD_DATE=undefined
 ENV BUILD_DATE=$BUILD_DATE
 # App Container Build Specification
